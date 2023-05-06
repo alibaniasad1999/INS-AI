@@ -256,6 +256,7 @@ est_v_eb_n_new = est_v_eb_n - x_est_new(4:6);
 L_est      = p(1) - x_est_new(7);
 lambda_est = p(2) - x_est_new(8);
 h_est      = p(3) - x_est_new(9);
+h_est = 0;
 %--------------------------------------------------------------------------
 % Update IMU bias estimates
 est_IMU_bias_new = est_IMU_bias_old + x_est_new(10:15);

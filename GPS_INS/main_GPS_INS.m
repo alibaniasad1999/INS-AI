@@ -1,8 +1,8 @@
 close all; clc;
 %% ========================================================================
-Set_Initialization_Error;
-KF_Config;
-tor_s = 1; % GPS Frequency
+Set_Initialization_Error_GPS_INS;
+KF_Config_GPS_INS;
+tor_s = 0.1; % GPS Frequency
 lGBB = [0;0;0];
 %% ========================================================================
 % Constants
@@ -12,8 +12,8 @@ Mug2mps2 = 9.80665E-6;%       convert micro-g to meter per second.^2
 %% ========================================================================
 % load('IMU_meas_60sec_car.mat');
 % load('GPS_meas_1hz_60sec_car.mat');
-load('IMU_meas_1000sec_otto.mat');
-load('GPS_meas_1hz_otto_1000sec_car.mat');
+load('IMU_meas_otter_S_2000sec_profile.mat');
+load('GPS_meas_10hz_otto_S_2000sec.mat');
 %% ========================================================================
 % Initialize true navigation solution
 old_time = in_profile(1,1);
@@ -44,7 +44,6 @@ out_profile(1,3) = old_est_lambda_b;
 out_profile(1,4) = old_est_h_b;
 out_profile(1,5:7) = old_est_v_eb_n';
 out_profile(1,8:10) = CTM_to_Euler(old_est_C_b_n')';
-Train_data = zeros(length(IMU_meas), 9);
 
 % Progress bar
 dots = '....................';
@@ -83,11 +82,6 @@ for epoch = 2:no_epochs
     [est_L_b,est_lambda_b,est_h_b,est_v_eb_n,est_C_b_n] = ...
         Nav_equations_NED(tor_i,old_est_L_b,old_est_lambda_b,old_est_h_b,...
         old_est_v_eb_n,old_est_C_b_n,meas_f_ib_b,meas_omega_ib_b);
-    Train_data(epoch, 1) = est_L_b;
-    Train_data(epoch, 2) = est_lambda_b;
-    Train_data(epoch, 3) = est_h_b;
-    Train_data(epoch, 4:6) = est_v_eb_n;
-    Train_data(epoch, 7:9) = CTM_to_Euler(est_C_b_n')';
     %==========================================================================
     %% if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
@@ -98,9 +92,10 @@ for epoch = 2:no_epochs
         GNSS_v_eb_n = GPS_NED(GPS_k,5:7)';
         %--------------------------------------------------------------------------
         % Run Integration Kalman filter
-        [est_L_b,est_lambda_b,est_h_b,est_v_eb_n,est_C_b_n,est_IMU_bias,P_matrix] = LC_KF_NED(GNSS_r_eb_n,...
-            GNSS_v_eb_n,tor_s,est_L_b,est_lambda_b,est_h_b,est_v_eb_n,est_C_b_n,...
-            est_IMU_bias,P_matrix,meas_f_ib_b,meas_omega_ib_b,LC_KF_config,lGBB);
+        [est_L_b,est_lambda_b,est_h_b,est_v_eb_n,est_C_b_n,est_IMU_bias,...
+            P_matrix] = LC_KF_NED(GNSS_r_eb_n,GNSS_v_eb_n,tor_s,est_L_b,...
+            est_lambda_b,est_h_b,est_v_eb_n,est_C_b_n,est_IMU_bias,...
+            P_matrix,meas_f_ib_b,meas_omega_ib_b,LC_KF_config,lGBB);
     end
     %--------------------------------------------------------------------------
     % Generate KF uncertainty output record
@@ -151,11 +146,6 @@ for epoch = 2:no_epochs
 end %epoch
 % Complete progress bar
 fprintf(strcat(rewind,bars,'\n'));
-choice = menu('Do you want save data','Yes', 'No');
-if choice == 1
-    saving_data_time(Train_data);
-    saving_csv_data_time(Train_data);
-end
 
 % Plot the input motion profile and the errors (may not work in Octave).
 close all;
