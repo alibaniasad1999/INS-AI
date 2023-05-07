@@ -1,5 +1,6 @@
-close all; clear all; clc;
+close all; clear; clc;
 %% ========================================================================
+LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -56,7 +57,7 @@ out_profile(1,3) = old_est_lambda_b_Master;
 out_profile(1,4) = old_est_h_b_Master;
 out_profile(1,5:7) = old_est_v_eb_n_Master';
 out_profile(1,8:10) = CTM_to_Euler(old_est_C_b_n_Master')';
-
+x_train = zeros(length(IMU_meas), 9);
 % Progress bar
 dots = '....................';
 bars = '||||||||||||||||||||';
@@ -70,7 +71,8 @@ Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
 no_epochs = length(IMU_meas);
-no_epochs = 42600;
+% no_epochs = 42600;
+Train_data = zeros(no_epochs, 9);
 for epoch = 2:no_epochs
 
     % Update progress bar
@@ -134,7 +136,7 @@ for epoch = 2:no_epochs
     meas_omega_ib_b_Slave = IMU_meas(epoch-1,5:7)';
 
     % Update estimated navigation solution (SLAVE INS)
-    [est_L_b_Slave,est_lambda_b_Slave,est_h_b_Slave,est_v_eb_n_Slave,...
+    [est_L_b_Slave,est_lambda_b_Slave,~,est_v_eb_n_Slave,...
         est_C_b_n_Slave] = Nav_equations_NED(tor_i,old_est_L_b_Slave,...
         old_est_lambda_b_Slave,old_est_h_b_Slave,old_est_v_eb_n_Slave,...
         old_est_C_b_n_Slave,meas_f_ib_b_Slave,meas_omega_ib_b_Slave);
@@ -143,6 +145,14 @@ for epoch = 2:no_epochs
     %% Transfer Alignment
     % Master_v_eb_n = in_profile(epoch,5:7)';
     Master_v_eb_n = est_v_eb_n_Master;
+    x_train(epoch, 1) = est_L_b_Master;
+    x_train(epoch, 2) = est_lambda_b_Master;
+    x_train(epoch, 3) = est_h_b_Master;
+    x_train(epoch, 4:6) = est_v_eb_n_Master;
+    x_train(epoch, 7:9) = CTM_to_Euler(est_C_b_n_Master')';
+    y_test_LSTM_error = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, :);
+    % Master_v_eb_n = y_test_LSTM_error(4:6)';
+    Train_data(epoch, :) = y_test_LSTM_error;
     %--------------------------------------------------------------------------
     % Run Integration Kalman filter
     [est_v_eb_n_Slave,est_C_b_n_Slave,est_IMU_bias_Slave,...
@@ -199,7 +209,11 @@ for epoch = 2:no_epochs
 end %epoch
 % Complete progress bar
 fprintf(strcat(rewind,bars,'\n'));
-
+choice = menu('Do you want save data','Yes', 'No');
+if choice == 1
+    saving_data_time(Train_data);
+    saving_csv_data_time(Train_data);
+end
 % Plot the input motion profile and the errors (may not work in Octave).
 close all;
 Plot_profile(in_profile);
