@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model');
+LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_v1');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -70,9 +70,10 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas);
+no_epochs = length(IMU_meas)/4;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 9);
+AI_result = zeros(no_epochs, 10);
 for epoch = 2:no_epochs
 
     % Update progress bar
@@ -99,6 +100,14 @@ for epoch = 2:no_epochs
         old_est_lambda_b_Master,old_est_h_b_Master,...
         old_est_v_eb_n_Master,old_est_C_b_n_Master,meas_f_ib_b_Master,...
         meas_omega_ib_b_Master);
+        x_train(epoch, 1) = est_L_b_Master;
+    x_train(epoch, 2) = est_lambda_b_Master;
+    x_train(epoch, 3) = est_h_b_Master;
+    x_train(epoch, 4:6) = est_v_eb_n_Master;
+    x_train(epoch, 7:9) = CTM_to_Euler(est_C_b_n_Master')';
+    y_test_LSTM_error = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, :);
+    % Master_v_eb_n = y_test_LSTM_error(4:6)';
+    Train_data(epoch, :) = y_test_LSTM_error;
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
@@ -144,15 +153,12 @@ for epoch = 2:no_epochs
     %==========================================================================
     %% Transfer Alignment
     % Master_v_eb_n = in_profile(epoch,5:7)';
-    Master_v_eb_n = est_v_eb_n_Master;
-    x_train(epoch, 1) = est_L_b_Master;
-    x_train(epoch, 2) = est_lambda_b_Master;
-    x_train(epoch, 3) = est_h_b_Master;
-    x_train(epoch, 4:6) = est_v_eb_n_Master;
-    x_train(epoch, 7:9) = CTM_to_Euler(est_C_b_n_Master')';
-    y_test_LSTM_error = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, :);
-    % Master_v_eb_n = y_test_LSTM_error(4:6)';
-    Train_data(epoch, :) = y_test_LSTM_error;
+    % Master_v_eb_n = est_v_eb_n_Master;
+    if (epoch > 10000 && epoch < 15000) || (epoch > 30000 && epoch < 45000)
+        Master_v_eb_n = y_test_LSTM_error(4:6)';
+    else
+        Master_v_eb_n = est_v_eb_n_Master;
+    end
     %--------------------------------------------------------------------------
     % Run Integration Kalman filter
     [est_v_eb_n_Slave,est_C_b_n_Slave,est_IMU_bias_Slave,...
@@ -206,13 +212,22 @@ for epoch = 2:no_epochs
     out_errors(epoch,2:4) = delta_r_eb_n';
     out_errors(epoch,5:7) = delta_v_eb_n';
     out_errors(epoch,8:10) = delta_eul_nb_n';
+    AI_result(epoch,1) = time;
+    AI_result(epoch,2:4) = delta_r_eb_n';
+    AI_result(epoch,5:7) = delta_v_eb_n';
+    AI_result(epoch,8:10) = delta_eul_nb_n';
 end %epoch
 % Complete progress bar
 fprintf(strcat(rewind,bars,'\n'));
-choice = menu('Do you want save data','Yes', 'No');
+choice = menu('Do you want save AI data','Yes', 'No');
 if choice == 1
-    saving_data_time(Train_data);
-    saving_csv_data_time(Train_data);
+    saving_data_time(Train_data, 'AI');
+    saving_csv_data_time(Train_data, 'AI');
+end
+choice = menu('Do you want save KF data','Yes', 'No');
+if choice == 1
+    saving_data_time(out_errors, 'KF');
+    saving_csv_data_time(out_errors, 'KF');
 end
 % Plot the input motion profile and the errors (may not work in Octave).
 close all;
