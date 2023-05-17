@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_v1');
+LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_v2_3_out');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -58,6 +58,7 @@ out_profile(1,4) = old_est_h_b_Master;
 out_profile(1,5:7) = old_est_v_eb_n_Master';
 out_profile(1,8:10) = CTM_to_Euler(old_est_C_b_n_Master')';
 x_train = zeros(length(IMU_meas), 9);
+v_data = zeros(length(IMU_meas), 3);
 % Progress bar
 dots = '....................';
 bars = '||||||||||||||||||||';
@@ -70,9 +71,9 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas)/4;
+no_epochs = length(IMU_meas)/2;
 % no_epochs = 42600;
-Train_data = zeros(no_epochs, 9);
+Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
 for epoch = 2:no_epochs
 
@@ -105,7 +106,7 @@ for epoch = 2:no_epochs
     x_train(epoch, 3) = est_h_b_Master;
     x_train(epoch, 4:6) = est_v_eb_n_Master;
     x_train(epoch, 7:9) = CTM_to_Euler(est_C_b_n_Master')';
-    y_test_LSTM_error = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, :);
+    y_test_LSTM_error = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, 4:6);
     % Master_v_eb_n = y_test_LSTM_error(4:6)';
     Train_data(epoch, :) = y_test_LSTM_error;
     %==========================================================================
@@ -154,11 +155,13 @@ for epoch = 2:no_epochs
     %% Transfer Alignment
     % Master_v_eb_n = in_profile(epoch,5:7)';
     % Master_v_eb_n = est_v_eb_n_Master;
-    if (epoch > 10000 && epoch < 15000) || (epoch > 30000 && epoch < 45000)
-        Master_v_eb_n = y_test_LSTM_error(4:6)';
+    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)
+        % Master_v_eb_n = est_v_eb_n_Master;
+        Master_v_eb_n = y_test_LSTM_error';
     else
         Master_v_eb_n = est_v_eb_n_Master;
     end
+    v_data(epoch, :) = Master_v_eb_n;
     %--------------------------------------------------------------------------
     % Run Integration Kalman filter
     [est_v_eb_n_Slave,est_C_b_n_Slave,est_IMU_bias_Slave,...
