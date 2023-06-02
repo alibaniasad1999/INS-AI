@@ -71,10 +71,11 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas)/2;
+no_epochs = length(IMU_meas);
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
+results = zeros(no_epochs, 6);
 for epoch = 2:no_epochs
 
     % Update progress bar
@@ -106,9 +107,14 @@ for epoch = 2:no_epochs
     x_train(epoch, 3) = est_h_b_Master;
     x_train(epoch, 4:6) = est_v_eb_n_Master;
     x_train(epoch, 7:9) = CTM_to_Euler(est_C_b_n_Master')';
-    y_test_LSTM_error = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, 4:6);
+    results(epoch, 1:3) = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, 4:6);
+    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
+            || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
+            || (epoch > 180000 && epoch < 190000)
+        y_test_LSTM_error = results(epoch, 1:3);
+    end
     % Master_v_eb_n = y_test_LSTM_error(4:6)';
-    Train_data(epoch, :) = y_test_LSTM_error;
+    % Train_data(epoch, :) = y_test_LSTM_error;
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
@@ -155,8 +161,10 @@ for epoch = 2:no_epochs
     %% Transfer Alignment
     % Master_v_eb_n = in_profile(epoch,5:7)';
     % Master_v_eb_n = est_v_eb_n_Master;
-    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)
-        % Master_v_eb_n = est_v_eb_n_Master;
+    results(epoch, 4:end) = est_v_eb_n_Master;
+    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
+            || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
+            || (epoch > 180000 && epoch < 190000)
         Master_v_eb_n = y_test_LSTM_error';
     else
         Master_v_eb_n = est_v_eb_n_Master;
@@ -224,8 +232,8 @@ end %epoch
 fprintf(strcat(rewind,bars,'\n'));
 choice = menu('Do you want save AI data','Yes', 'No');
 if choice == 1
-    saving_data_time(Train_data, 'AI');
-    saving_csv_data_time(Train_data, 'AI');
+    saving_data_time(results, 'AI');
+    % saving_csv_data_time(Train_data, 'AI');
 end
 choice = menu('Do you want save KF data','Yes', 'No');
 if choice == 1
