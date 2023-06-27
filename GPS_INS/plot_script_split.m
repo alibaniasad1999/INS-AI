@@ -14,7 +14,7 @@ colors = [
     0.4940 0.1840 0.5560;  % Dark purple
     0.4660 0.6740 0.1880   % Dark green
 ];
-line_ploter(time, data(:, 2:end), t1, t2, colors)
+line_ploter_split(time, data(:, 2:end), t1, t2, colors)
 
 hold off
 % line_ploter_3D(time, horzcat(rN(1:end-1), rN2)...
