@@ -1,5 +1,8 @@
 function line_ploter_split(time, data, t1, t2, color)
-
+title_array = ["North position error, m", "East position error, m", ...
+    "Down position error, m", "North velocity error, m/s", "East velocity error, m/s", ...
+    "Down velocity error, m/s", "Attitude error about North, deg", "Attitude error about East, deg", ...
+    "Heading error, deg"];
 for j = 1:length(data)
     if j > 9
         break;
@@ -34,6 +37,8 @@ end
     xlabel('Time(sec)', 'interpreter', 'latex', 'FontSize', 24);
     ylabel('error', 'interpreter', 'latex', 'FontSize', 24);
     set(gca, 'FontSize', 16, 'FontName', 'Times New Roman');
+    title(title_array(j), 'Interpreter','latex')
+
     hold off
     print(string(j), '-depsc');
 end
