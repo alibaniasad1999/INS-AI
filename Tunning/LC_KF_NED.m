@@ -1,6 +1,6 @@
 function [L_est,lambda_est,h_est,est_v_eb_n_new,est_C_b_n_new,est_IMU_bias_new,P_matrix_new] =...
     LC_KF_NED(GNSS_r_eb_n,GNSS_v_eb_n,tor_s,L,lambda,h,est_v_eb_n,est_C_b_n_old,est_IMU_bias_old,...
-    P_matrix_old,meas_fBIB,meas_wBIB,LC_KF_config,lGBB)
+    P_matrix_old,meas_fBIB,meas_wBIB,LC_KF_config,lGBB, noise_IMU)
 
 D2R = 0.01745329252;%         convert degree to radian
 R2D = 1/D2R;%                 convert radian to degree
@@ -163,10 +163,10 @@ tao_INS = 0.01;
 %% IMU noise uncertainty
 KF_unc.noise_IMU = [accel_VRW; gyro_ARW;  accel_bias_PSD;  gyro_bias_PSD;];
 
-S_a  = KF_unc.noise_IMU (1);
-S_g  = KF_unc.noise_IMU (2);
-Sp_a = KF_unc.noise_IMU (3);
-Sp_g = KF_unc.noise_IMU (4);
+S_a  = noise_IMU (1);
+S_g  = noise_IMU (2);
+Sp_a = noise_IMU (3);
+Sp_g = noise_IMU (4);
 %Cartesian-to-curvilinear position change transformation matrix (p = T_prn * r_n)
 T_prn = F32;
 %--------------------------------------------------------------------------

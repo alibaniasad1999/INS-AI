@@ -2,11 +2,15 @@ function cost = Objective_function(LC_KF_config_optimization)
 %% ========================================================================
 Set_Initialization_Error_GPS_INS;
 KF_Config_GPS_INS;
-LC_KF_config.init_att_unc = LC_KF_config_optimization(1);
-LC_KF_config.init_vel_unc = LC_KF_config_optimization(2);
-LC_KF_config.init_pos_unc = LC_KF_config_optimization(3);
-LC_KF_config.init_b_a_unc = LC_KF_config_optimization(4);
-LC_KF_config.init_b_g_unc = LC_KF_config_optimization(5);
+noise_IMU = zeros(1, 4);
+noise_IMU(1) = LC_KF_config_optimization(3);
+noise_IMU(2) = LC_KF_config_optimization(4);
+noise_IMU(3) = LC_KF_config_optimization(5);
+noise_IMU(4) = LC_KF_config_optimization(6);
+
+LC_KF_config.pos_meas_SD = LC_KF_config_optimization(1);
+LC_KF_config.vel_meas_SD = LC_KF_config_optimization(2);
+
 tor_s = 0.1; % GPS Frequency
 lGBB = [0;0;0];
 %% ========================================================================
@@ -102,7 +106,7 @@ for epoch = 2:no_epochs
         [est_L_b,est_lambda_b,est_h_b,est_v_eb_n,est_C_b_n,est_IMU_bias,...
             P_matrix] = LC_KF_NED(GNSS_r_eb_n,GNSS_v_eb_n,tor_s,est_L_b,...
             est_lambda_b,est_h_b,est_v_eb_n,est_C_b_n,est_IMU_bias,...
-            P_matrix,meas_f_ib_b,meas_omega_ib_b,LC_KF_config,lGBB);
+            P_matrix,meas_f_ib_b,meas_omega_ib_b,LC_KF_config,lGBB, noise_IMU);
     end
     %--------------------------------------------------------------------------
     % Generate KF uncertainty output record
