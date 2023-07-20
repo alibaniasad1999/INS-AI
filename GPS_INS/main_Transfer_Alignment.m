@@ -71,7 +71,7 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas)/10;
+no_epochs = length(IMU_meas)/2;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
@@ -118,11 +118,11 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (epoch > 4500 && epoch < 16500)% add old data from ins data
-        error = 0.01*predict(LSTM_error, 10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0]))';
-       est_v_eb_n_Master = est_v_eb_n_Master - error;
-       %%% fix in out of NN 10 and 100 
-    end
+    % if (epoch > 4500 && epoch < 16500)% add old data from ins data
+    %     error = 0.01*predict(LSTM_error, 10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0]))';
+    %    est_v_eb_n_Master = est_v_eb_n_Master - error;
+    %    %%% fix in out of NN 10 and 100 
+    % end
     if (tao_GPS) >= tor_s
         GPS_update_time = time;
         GPS_k = GPS_k + 1;
