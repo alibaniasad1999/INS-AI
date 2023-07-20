@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_v2_3_out');
+% LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_v2_3_out');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -71,7 +71,7 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas)/5;
+no_epochs = length(IMU_meas)/2;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
@@ -118,10 +118,10 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (epoch > 4500 && epoch < 16500) || (epoch > 180000 && epoch < 190000) % add old data from ins data
-    results(epoch, 1:3) = predict(LSTM_error, x_train(epoch, :)) - x_train(epoch, 4:6);
-    % results(epoch, 1:3) = est_v_eb_n_Master;
-    elseif (tao_GPS) >= tor_s
+    % if (epoch > 4500 && epoch < 16500) || (epoch > 180000 && epoch < 190000) % add old data from ins data
+    % results(epoch, 1:3) = predict(LSTM_error, x_train(epoch, :)) - x_train(epoch, 4:6);
+    % % results(epoch, 1:3) = est_v_eb_n_Master;
+    if (tao_GPS) >= tor_s
         GPS_update_time = time;
         GPS_k = GPS_k + 1;
         GNSS_r_eb_n = GPS_NED(GPS_k,2:4)';
@@ -164,16 +164,17 @@ for epoch = 2:no_epochs
     %% Transfer Alignment
     % Master_v_eb_n = in_profile(epoch,5:7)';
     % Master_v_eb_n = est_v_eb_n_Master;
-    results(epoch, 4:end) = est_v_eb_n_Master;
-    if (epoch > 4500 && epoch < 16500) || (epoch > 180000 && epoch < 190000)
-        est_v_eb_n_Master = results(epoch, 1:3)';
-        Master_v_eb_n = results(epoch, 1:3)';
-    else
-        Master_v_eb_n = est_v_eb_n_Master;
-    end
-    v_data(epoch, :) = Master_v_eb_n;
+    % results(epoch, 4:end) = est_v_eb_n_Master;
+    % if (epoch > 4500 && epoch < 16500) || (epoch > 180000 && epoch < 190000)
+    %     est_v_eb_n_Master = results(epoch, 1:3)';
+    %     Master_v_eb_n = results(epoch, 1:3)';
+    % else
+    %     Master_v_eb_n = est_v_eb_n_Master;
+    % end
     %--------------------------------------------------------------------------
     % Run Integration Kalman filter
+    Train_data = est_v_eb_n_Master;
+    Master_v_eb_n = est_v_eb_n_Master;
     [est_v_eb_n_Slave,est_C_b_n_Slave,est_IMU_bias_Slave,...
         P_matrix_Slave] = LC_KF_NED_Transfer_Alignment(Master_v_eb_n,tor_s,est_L_b_Slave,...
         est_lambda_b_Slave,est_h_b_Slave,est_v_eb_n_Slave,est_C_b_n_Slave,est_IMU_bias_Slave,...
@@ -232,10 +233,9 @@ for epoch = 2:no_epochs
 end %epoch
 % Complete progress bar
 fprintf(strcat(rewind,bars,'\n'));
-choice = menu('Do you want save AI data','Yes', 'No');
+choice = menu('Do you want save train data','Yes', 'No');
 if choice == 1
-    % saving_data_time(results, 'AI');
-    % saving_csv_data_time(Train_data, 'AI');
+    saving_csv_data_time(Train_data, 'AI_train');
 end
 choice = menu('Do you want save KF data','Yes', 'No');
 if choice == 1

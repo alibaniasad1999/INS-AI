@@ -2,7 +2,7 @@ close all; clc;
 %% ========================================================================
 Set_Initialization_Error_GPS_INS;
 KF_Config_GPS_INS;
-tor_s = 0.1; % GPS Frequency
+tor_s = 1; % GPS Frequency
 lGBB = [0;0;0];
 %% ========================================================================
 % Constants
@@ -12,8 +12,8 @@ Mug2mps2 = 9.80665E-6;%       convert micro-g to meter per second.^2
 %% ========================================================================
 % load('IMU_meas_60sec_car.mat');
 % load('GPS_meas_1hz_60sec_car.mat');
-load('IMU_meas_otter_S_2000sec_profile.mat');
-load('GPS_meas_10hz_otto_S_2000sec.mat');
+load('IMU_meas_1000sec_otto.mat');
+load('GPS_meas_1hz_otto_1000sec.mat');
 %% ========================================================================
 % Initialize true navigation solution
 old_time = in_profile(1,1);
