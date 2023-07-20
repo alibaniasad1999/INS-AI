@@ -71,7 +71,7 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas);
+no_epochs = length(IMU_meas)/5;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
@@ -108,17 +108,21 @@ for epoch = 2:no_epochs
     x_train(epoch, 4:6) = est_v_eb_n_Master;
     x_train(epoch, 7:9) = CTM_to_Euler(est_C_b_n_Master')';
     results(epoch, 1:3) = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, 4:6);
-    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
-            || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
-            || (epoch > 180000 && epoch < 190000)
-        y_test_LSTM_error = results(epoch, 1:3);
-    end
+    % if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
+    %         || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
+    %         || (epoch > 180000 && epoch < 190000)
+    %     y_test_LSTM_error = results(epoch, 1:3);
+    % end
     % Master_v_eb_n = y_test_LSTM_error(4:6)';
     % Train_data(epoch, :) = y_test_LSTM_error;
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (tao_GPS) >= tor_s
+    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
+        || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
+        || (epoch > 180000 && epoch < 190000) % add old data from ins data
+    y_test_LSTM_error = results(epoch, 1:3);
+    elseif (tao_GPS) >= tor_s
         GPS_update_time = time;
         GPS_k = GPS_k + 1;
         GNSS_r_eb_n = GPS_NED(GPS_k,2:4)';
@@ -132,13 +136,13 @@ for epoch = 2:no_epochs
             est_v_eb_n_Master,est_C_b_n_Master,est_IMU_bias_Master,...
             P_matrix_Master,meas_f_ib_b_Master,meas_omega_ib_b_Master,...
             LC_KF_config_Master,lGBB_Master);
-
+    end
     old_est_L_b_Master = est_L_b_Master;
     old_est_lambda_b_Master = est_lambda_b_Master;
     old_est_h_b_Master = est_h_b_Master;
     old_est_v_eb_n_Master = est_v_eb_n_Master;
     old_est_C_b_n_Master = est_C_b_n_Master;
-    end
+    % end
 
 
     %% ========================================================================
@@ -232,7 +236,7 @@ end %epoch
 fprintf(strcat(rewind,bars,'\n'));
 choice = menu('Do you want save AI data','Yes', 'No');
 if choice == 1
-    saving_data_time(results, 'AI');
+    % saving_data_time(results, 'AI');
     % saving_csv_data_time(Train_data, 'AI');
 end
 choice = menu('Do you want save KF data','Yes', 'No');
