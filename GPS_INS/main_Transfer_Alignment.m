@@ -107,7 +107,7 @@ for epoch = 2:no_epochs
     x_train(epoch, 3) = est_h_b_Master;
     x_train(epoch, 4:6) = est_v_eb_n_Master;
     x_train(epoch, 7:9) = CTM_to_Euler(est_C_b_n_Master')';
-    results(epoch, 1:3) = predict(LSTM_error, x_train(epoch, :)) + x_train(epoch, 4:6);
+    
     % if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
     %         || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
     %         || (epoch > 180000 && epoch < 190000)
@@ -118,10 +118,9 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
-        || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
-        || (epoch > 180000 && epoch < 190000) % add old data from ins data
-    y_test_LSTM_error = results(epoch, 1:3);
+    if (epoch > 4500 && epoch < 16500) || (epoch > 180000 && epoch < 190000) % add old data from ins data
+    results(epoch, 1:3) = predict(LSTM_error, x_train(epoch, :)) - x_train(epoch, 4:6);
+    % results(epoch, 1:3) = est_v_eb_n_Master;
     elseif (tao_GPS) >= tor_s
         GPS_update_time = time;
         GPS_k = GPS_k + 1;
@@ -166,10 +165,9 @@ for epoch = 2:no_epochs
     % Master_v_eb_n = in_profile(epoch,5:7)';
     % Master_v_eb_n = est_v_eb_n_Master;
     results(epoch, 4:end) = est_v_eb_n_Master;
-    if (epoch > 45000 && epoch < 65000) || (epoch > 10000 && epoch < 15000)...
-            || (epoch > 100000 && epoch < 120000) || (epoch > 145000 && epoch < 160000)...
-            || (epoch > 180000 && epoch < 190000)
-        Master_v_eb_n = y_test_LSTM_error';
+    if (epoch > 4500 && epoch < 16500) || (epoch > 180000 && epoch < 190000)
+        est_v_eb_n_Master = results(epoch, 1:3)';
+        Master_v_eb_n = results(epoch, 1:3)';
     else
         Master_v_eb_n = est_v_eb_n_Master;
     end
