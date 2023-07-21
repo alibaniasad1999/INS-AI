@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new');
+LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_imu_9out');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -71,7 +71,7 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas)/2;
+no_epochs = length(IMU_meas)/10;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
@@ -102,7 +102,7 @@ for epoch = 2:no_epochs
         old_est_lambda_b_Master,old_est_h_b_Master,...
         old_est_v_eb_n_Master,old_est_C_b_n_Master,meas_f_ib_b_Master,...
         meas_omega_ib_b_Master);
-        x_train(epoch, 1) = est_L_b_Master;
+    x_train(epoch, 1) = est_L_b_Master;
     x_train(epoch, 2) = est_lambda_b_Master;
     x_train(epoch, 3) = est_h_b_Master;
     x_train(epoch, 4:6) = est_v_eb_n_Master;
@@ -118,12 +118,19 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    % if (epoch > 4500 && epoch < 16500)% add old data from ins data
-    %     error = 0.01*predict(LSTM_error, 10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0]))';
-    %    est_v_eb_n_Master = est_v_eb_n_Master - error;
-    %    %%% fix in out of NN 10 and 100 
+    if (epoch > 4500 && epoch < 10000)% add old data from ins data
+        error = 0.01*predict(LSTM_error, 10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0]))';
+       preidicted_data = x_train(epoch, :)' - error;
+       est_L_b_Master = preidicted_data(1);
+       est_lambda_b_Master = preidicted_data(2);
+       est_h_b_Master = preidicted_data(3);
+       est_v_eb_n_Master = preidicted_data(4:6);
+       est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
+       sum((in_profile(epoch, 2:end) - preidicted_data').^2)
+
+       %%% fix in out of NN 10 and 100 
     % end
-    if (tao_GPS) >= tor_s
+    elseif (tao_GPS) >= tor_s
         GPS_update_time = time;
         GPS_k = GPS_k + 1;
         GNSS_r_eb_n = GPS_NED(GPS_k,2:4)';
