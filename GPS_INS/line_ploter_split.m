@@ -37,7 +37,7 @@ end
     xlabel('Time(sec)', 'interpreter', 'latex', 'FontSize', 24);
     ylabel('error', 'interpreter', 'latex', 'FontSize', 24);
     set(gca, 'FontSize', 16, 'FontName', 'Times New Roman');
-    print(append('../../AI-aided-Transfer-alignment-Manuscript/Figure/AI-results/Master/'...
+    print(append('../../AI-aided-Transfer-alignment-Manuscript/Figure/AI-results/Slave/'...
         ,title_array(j)), '-depsc', '-tiff', '-r300', '-vector');
     close;
 end

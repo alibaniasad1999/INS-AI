@@ -1,7 +1,8 @@
-load('../data_created/01-Jun-2023-21-01-20-INS_GPS_function_KF.mat');
+load('all_data.mat', 'AI_result')
+data = AI_result;
 time = data(:, 1);
-t1 = [100, 450, 1000, 1450, 1800];
-t2 = [150, 650, 1200, 1600, 1900];
+t1 = 1045;
+t2 = 1800;
 
 colors = [
     0.9290 0.6940 0.1250;  % Dark yellow

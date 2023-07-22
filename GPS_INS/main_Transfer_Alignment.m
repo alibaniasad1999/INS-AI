@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_imu_9out');
+LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new_strcut_two_input');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -75,6 +75,7 @@ no_epochs = length(IMU_meas)/10;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
+AI_result_master = zeros(no_epochs, 10);
 results = zeros(no_epochs, 6);
 for epoch = 2:no_epochs
 
@@ -118,15 +119,23 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (epoch > 4500 && epoch < 10000)% add old data from ins data
-        error = 0.01*predict(LSTM_error, 10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0]))';
-       preidicted_data = x_train(epoch, :)' - error;
-       est_L_b_Master = preidicted_data(1);
-       est_lambda_b_Master = preidicted_data(2);
-       est_h_b_Master = preidicted_data(3);
-       est_v_eb_n_Master = preidicted_data(4:6);
-       est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
-       sum((in_profile(epoch, 2:end) - preidicted_data').^2)
+    if (epoch > 104500 && epoch < 180000)% add old data from ins data
+
+        % dlX1 = dlarray(ones([6   1  10]), 'CBT');
+        % dlX2 = dlarray(ones([1  1  9]), 'CBT');
+       %  imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
+       %  ins_inpu = 100*x_train(epoch-9, :);
+       %  dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
+       %  dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
+       %  net = predict(LSTM_error, dlX1, dlX2);
+       %  preidicted_data = net/100; % normalized in train
+       %  preidicted_data = extractdata(preidicted_data);
+       % est_L_b_Master = preidicted_data(1);
+       % est_lambda_b_Master = preidicted_data(2);
+       % est_h_b_Master = preidicted_data(3);
+       % est_v_eb_n_Master = preidicted_data(4:6);
+       % est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
+       % sum((in_profile(epoch, 2:end) - preidicted_data').^2)
 
        %%% fix in out of NN 10 and 100 
     % end
@@ -239,6 +248,18 @@ for epoch = 2:no_epochs
     AI_result(epoch,2:4) = delta_r_eb_n';
     AI_result(epoch,5:7) = delta_v_eb_n';
     AI_result(epoch,8:10) = delta_eul_nb_n';
+
+    % master error 
+    [delta_r_eb_n_master,delta_v_eb_n_master,delta_eul_nb_n_master]...
+    = Calculate_errors_NED(...
+        est_L_b_Master,est_lambda_b_Master,est_h_b_Master,...
+        est_v_eb_n_Master,est_C_b_n_Master,true_L_b,...
+        true_lambda_b,true_h_b,true_v_eb_n,true_C_b_n);
+
+    AI_result_master(epoch,1) = time;
+    AI_result_master(epoch,2:4) = delta_r_eb_n_master';
+    AI_result_master(epoch,5:7) = delta_v_eb_n_master';
+    AI_result_master(epoch,8:10) = delta_eul_nb_n_master';
 end %epoch
 % Complete progress bar
 fprintf(strcat(rewind,bars,'\n'));
