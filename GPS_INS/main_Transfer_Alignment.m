@@ -4,7 +4,7 @@ LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new_strcut_two
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
-tor_s = 0.1; % GPS Frequency
+tor_s = .1; % GPS Frequency
 lGBB = [0;0;0];
 lGBB_Master = [0;0;0];
 %% ========================================================================
@@ -17,8 +17,8 @@ Mug2mps2 = 9.80665E-6;%       convert micro-g to meter per second.^2
 % load('GPS_meas_1hz_60sec_car.mat');
 % load('IMU_meas_1000sec_otto.mat');
 % load('GPS_meas_1hz_otto_1000sec_car.mat');
-load('IMU_meas_otter_S_2000sec_profile.mat');
-load('GPS_meas_10hz_otto_S_2000sec.mat');
+load('IMU_meas_otter_Tuning_scenario_C_35s.mat')
+load('GPS_meas_10hz_otto_Tuning_scenario_C_35s.mat')
 %% ========================================================================
 % Initialize true navigation solution
 old_time = in_profile(1,1);
@@ -71,7 +71,7 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas)/10;
+no_epochs = length(IMU_meas);
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
@@ -119,7 +119,7 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (epoch > 104500 && epoch < 180000)% add old data from ins data
+    if (epoch > 1000 && epoch < 35000)% add old data from ins data
 
         % dlX1 = dlarray(ones([6   1  10]), 'CBT');
         % dlX2 = dlarray(ones([1  1  9]), 'CBT');
