@@ -59,6 +59,9 @@ out_profile(1,5:7) = old_est_v_eb_n_Master';
 out_profile(1,8:10) = CTM_to_Euler(old_est_C_b_n_Master')';
 x_train = zeros(length(IMU_meas), 9);
 v_data = zeros(length(IMU_meas), 3);
+imu_online_train = zeros(50, 6);
+ins_online_train = zeros(50, 9);
+counter_online_train = 1;
 % Progress bar
 dots = '....................';
 bars = '||||||||||||||||||||';
@@ -119,23 +122,25 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (epoch > 1000 && epoch < 35000)% add old data from ins data
+
+        
+    if (epoch > 1000 && epoch < 3500)% add old data from ins data
 
         % dlX1 = dlarray(ones([6   1  10]), 'CBT');
         % dlX2 = dlarray(ones([1  1  9]), 'CBT');
-       %  imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
-       %  ins_inpu = 100*x_train(epoch-9, :);
-       %  dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
-       %  dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
-       %  net = predict(LSTM_error, dlX1, dlX2);
-       %  preidicted_data = net/100; % normalized in train
-       %  preidicted_data = extractdata(preidicted_data);
-       % est_L_b_Master = preidicted_data(1);
-       % est_lambda_b_Master = preidicted_data(2);
-       % est_h_b_Master = preidicted_data(3);
-       % est_v_eb_n_Master = preidicted_data(4:6);
-       % est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
-       % sum((in_profile(epoch, 2:end) - preidicted_data').^2)
+        imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
+        ins_inpu = 100*x_train(epoch-9, :);
+        dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
+        dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
+        net = predict(LSTM_error, dlX1, dlX2);
+        preidicted_data = net/100; % normalized in train
+        preidicted_data = extractdata(preidicted_data);
+       est_L_b_Master = preidicted_data(1);
+       est_lambda_b_Master = preidicted_data(2);
+       est_h_b_Master = preidicted_data(3);
+       est_v_eb_n_Master = preidicted_data(4:6);
+       est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
+       sum((in_profile(epoch, 2:end) - preidicted_data').^2)
 
        %%% fix in out of NN 10 and 100 
     % end
@@ -160,6 +165,9 @@ for epoch = 2:no_epochs
     old_est_v_eb_n_Master = est_v_eb_n_Master;
     old_est_C_b_n_Master = est_C_b_n_Master;
     % end
+
+
+
 
 
     %% ========================================================================
@@ -197,6 +205,25 @@ for epoch = 2:no_epochs
         P_matrix_Slave] = LC_KF_NED_Transfer_Alignment(Master_v_eb_n,tor_s,est_L_b_Slave,...
         est_lambda_b_Slave,est_h_b_Slave,est_v_eb_n_Slave,est_C_b_n_Slave,est_IMU_bias_Slave,...
         P_matrix_Slave,meas_f_ib_b_Slave,meas_omega_ib_b_Slave,LC_KF_config,lGBB);
+
+
+
+    %%%%%%%%%%%%%%%%% AI training %%%%%%%%%%%%%%%%%
+    if ~(epoch > 1000 && epoch < 3500) % data available and dont need AI
+        ins_online_train(counter_online_train,:) =...
+            100*x_train(epoch, :);
+
+        imu_online_train(counter_online_train,:) = ...
+            10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
+        counter_online_train = counter_online_train + 1;
+        if counter_online_train > 50
+            counter_online_train = 1;
+            % send data to train %
+            data.imu = imu_online_train;
+            data.ins = ins_online_train;
+            LSTM_error = online_traning(LSTM_error, data);
+        end
+    end
     %--------------------------------------------------------------------------
     % Generate KF uncertainty output record
     %         SD_est(GPS_k,1) = Time;
