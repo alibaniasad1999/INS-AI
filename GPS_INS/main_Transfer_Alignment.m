@@ -123,19 +123,19 @@ for epoch = 2:no_epochs
 
         % dlX1 = dlarray(ones([6   1  10]), 'CBT');
         % dlX2 = dlarray(ones([1  1  9]), 'CBT');
-       %  imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
-       %  ins_inpu = 100*x_train(epoch-9, :);
-       %  dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
-       %  dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
-       %  net = predict(LSTM_error, dlX1, dlX2);
-       %  preidicted_data = net/100; % normalized in train
-       %  preidicted_data = extractdata(preidicted_data);
-       % est_L_b_Master = preidicted_data(1);
-       % est_lambda_b_Master = preidicted_data(2);
-       % est_h_b_Master = preidicted_data(3);
-       % est_v_eb_n_Master = preidicted_data(4:6);
-       % est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
-       % sum((in_profile(epoch, 2:end) - preidicted_data').^2)
+        imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
+        ins_inpu = 100*x_train(epoch-9, :);
+        dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
+        dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
+        net = predict(LSTM_error, dlX1, dlX2);
+        preidicted_data = net/100; % normalized in train
+        preidicted_data = extractdata(preidicted_data);
+       est_L_b_Master = preidicted_data(1);
+       est_lambda_b_Master = preidicted_data(2);
+       est_h_b_Master = preidicted_data(3);
+       est_v_eb_n_Master = preidicted_data(4:6);
+       est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
+       sum((in_profile(epoch, 2:end) - preidicted_data').^2)
 
        %%% fix in out of NN 10 and 100 
     % end
