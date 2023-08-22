@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new_strcut_two_input');
+% LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new_strcut_two_input');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -124,7 +124,7 @@ for epoch = 2:no_epochs
     tao_GPS = time - GPS_update_time;  % Time update interval
 
         
-    if (epoch > 1000 && epoch < 3500)% add old data from ins data
+    if false && (epoch > 1000 && epoch < 3500)% add old data from ins data
 
         % dlX1 = dlarray(ones([6   1  10]), 'CBT');
         % dlX2 = dlarray(ones([1  1  9]), 'CBT');
@@ -209,22 +209,22 @@ for epoch = 2:no_epochs
 
 
     %%%%%%%%%%%%%%%%% AI training %%%%%%%%%%%%%%%%%
-    if ~(epoch > 1000 && epoch < 3500) % data available and dont need AI
-        ins_online_train(counter_online_train,:) =...
-            100*x_train(epoch, :);
-
-        imu_online_train(counter_online_train,:) = ...
-            10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
-        counter_online_train = counter_online_train + 1;
-        if counter_online_train > 50
-            counter_online_train = 1;
-            % send data to train %
-            data.imu = imu_online_train;
-            data.ins = ins_online_train;
-            LSTM_error = online_traning(LSTM_error, data);
-        end
-    end
-    %--------------------------------------------------------------------------
+    % if ~(epoch > 1000 && epoch < 3500) % data available and dont need AI
+    %     ins_online_train(counter_online_train,:) =...
+    %         100*x_train(epoch, :);
+    % 
+    %     imu_online_train(counter_online_train,:) = ...
+    %         10*(IMU_meas(epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
+    %     counter_online_train = counter_online_train + 1;
+    %     if counter_online_train > 50
+    %         counter_online_train = 1;
+    %         % send data to train %
+    %         data.imu = imu_online_train;
+    %         data.ins = ins_online_train;
+    %         LSTM_error = online_traning(LSTM_error, data);
+    %     end
+    % end
+    % %--------------------------------------------------------------------------
     % Generate KF uncertainty output record
     %         SD_est(GPS_k,1) = Time;
     %         for i =1:15
