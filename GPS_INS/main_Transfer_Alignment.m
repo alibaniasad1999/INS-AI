@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new_strcut_two_input_lite_normal');
+LSTM = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new_strcut_two_input');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -17,8 +17,8 @@ Mug2mps2 = 9.80665E-6;%       convert micro-g to meter per second.^2
 % load('GPS_meas_1hz_60sec_car.mat');
 % load('IMU_meas_1000sec_otto.mat');
 % load('GPS_meas_1hz_otto_1000sec_car.mat');
-load('IMU_meas_otter_Tuning_scenario_C_35s.mat')
-load('GPS_meas_10hz_otto_Tuning_scenario_C_35s.mat')
+load('IMU_meas_otter_S_2000sec_profile.mat')
+load('GPS_meas_10hz_otto_S_2000sec.mat')
 %% ========================================================================
 % Initialize true navigation solution
 old_time = in_profile(1,1);
@@ -74,7 +74,7 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas);
+no_epochs = length(IMU_meas)/80;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
@@ -124,25 +124,27 @@ for epoch = 2:no_epochs
     tao_GPS = time - GPS_update_time;  % Time update interval
 
         
-    if (epoch > 2000 && epoch < 3500)% add old data from ins data
+    if (epoch > 500 && epoch < 1000)% add old data from ins data
 
         % dlX1 = dlarray(ones([6   1  10]), 'CBT');
         % dlX2 = dlarray(ones([1  1  9]), 'CBT');
         imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
-        ins_inpu = x_train(epoch-9, :).*...
-            [10, 10, 1000, 1, 10, 100, 1000, 100, 10];
+        ins_inpu = x_train(epoch-9, :)*...
+            100;
         dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
         dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
         net = predict(LSTM, dlX1, dlX2);
         preidicted_data = net; % normalized in train
-        preidicted_data = extractdata(preidicted_data) ./...
-            [10, 10, 1000, 1, 10, 100, 1000, 100, 10]';
+        preidicted_data = extractdata(preidicted_data) /100;
        est_L_b_Master = preidicted_data(1);
        est_lambda_b_Master = preidicted_data(2);
        est_h_b_Master = preidicted_data(3);
        est_v_eb_n_Master = preidicted_data(4:6);
        est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
-       sum((in_profile(epoch, 2:end) - preidicted_data').^2)
+       sum((in_profile(epoch, 5:7)' - est_v_eb_n_Master).^2)
+       (in_profile(epoch, 5:7) - est_v_eb_n_Master')
+       est_v_eb_n_Master
+       in_profile(epoch, 5:7)
 
        %%% fix in out of NN 10 and 100 
     % end
@@ -183,11 +185,11 @@ for epoch = 2:no_epochs
     meas_omega_ib_b_Slave = IMU_meas(epoch-1,5:7)';
 
     % Update estimated navigation solution (SLAVE INS)
-    [est_L_b_Slave,est_lambda_b_Slave,~,est_v_eb_n_Slave,...
+    [est_L_b_Slave,est_lambda_b_Slave,est_h_b_Slave,est_v_eb_n_Slave,...
         est_C_b_n_Slave] = Nav_equations_NED(tor_i,old_est_L_b_Slave,...
         old_est_lambda_b_Slave,old_est_h_b_Slave,old_est_v_eb_n_Slave,...
         old_est_C_b_n_Slave,meas_f_ib_b_Slave,meas_omega_ib_b_Slave);
-    est_h_b_Slave = 0;
+    % est_h_b_Slave = 0;
     %==========================================================================
     %% Transfer Alignment
     % Master_v_eb_n = in_profile(epoch,5:7)';
