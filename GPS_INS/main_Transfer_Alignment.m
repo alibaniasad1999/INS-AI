@@ -4,7 +4,7 @@ LSTM_error = importTensorFlowNetwork('../LSTM/LSTM_error_NN_model_new_strcut_two
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
-tor_s = .1; % GPS Frequency
+tor_s = 0.1; % GPS Frequency
 lGBB = [0;0;0];
 lGBB_Master = [0;0;0];
 %% ========================================================================
@@ -17,8 +17,8 @@ Mug2mps2 = 9.80665E-6;%       convert micro-g to meter per second.^2
 % load('GPS_meas_1hz_60sec_car.mat');
 % load('IMU_meas_1000sec_otto.mat');
 % load('GPS_meas_1hz_otto_1000sec_car.mat');
-load('IMU_meas_otter_Tuning_scenario_C_35s.mat')
-load('GPS_meas_10hz_otto_Tuning_scenario_C_35s.mat')
+load('IMU_meas_otter_S_2000sec_profile.mat');
+load('GPS_meas_10hz_otto_S_2000sec.mat');
 %% ========================================================================
 % Initialize true navigation solution
 old_time = in_profile(1,1);
@@ -71,7 +71,7 @@ progress_epoch = 0;
 Run_time = 0;
 GPS_k = 1;
 GPS_update_time = 0;
-no_epochs = length(IMU_meas);
+no_epochs = length(IMU_meas)/10;
 % no_epochs = 42600;
 Train_data = zeros(no_epochs, 3);
 AI_result = zeros(no_epochs, 10);
@@ -119,23 +119,23 @@ for epoch = 2:no_epochs
     %==========================================================================
     % if GPS output received: run Kalman filter
     tao_GPS = time - GPS_update_time;  % Time update interval
-    if (epoch > 1000 && epoch < 35000)% add old data from ins data
+    if (epoch > 104500 && epoch < 180000)% add old data from ins data
 
         % dlX1 = dlarray(ones([6   1  10]), 'CBT');
         % dlX2 = dlarray(ones([1  1  9]), 'CBT');
-       %  imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
-       %  ins_inpu = 100*x_train(epoch-9, :);
-       %  dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
-       %  dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
-       %  net = predict(LSTM_error, dlX1, dlX2);
-       %  preidicted_data = net/100; % normalized in train
-       %  preidicted_data = extractdata(preidicted_data);
-       % est_L_b_Master = preidicted_data(1);
-       % est_lambda_b_Master = preidicted_data(2);
-       % est_h_b_Master = preidicted_data(3);
-       % est_v_eb_n_Master = preidicted_data(4:6);
-       % est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
-       % sum((in_profile(epoch, 2:end) - preidicted_data').^2)
+        imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
+        ins_inpu = 100*x_train(epoch-9, :);
+        dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
+        dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
+        net = predict(LSTM_error, dlX1, dlX2);
+        preidicted_data = net/100; % normalized in train
+        preidicted_data = extractdata(preidicted_data);
+       est_L_b_Master = preidicted_data(1);
+       est_lambda_b_Master = preidicted_data(2);
+       est_h_b_Master = preidicted_data(3);
+       est_v_eb_n_Master = preidicted_data(4:6);
+       est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
+       sum((in_profile(epoch, 2:end) - preidicted_data').^2)
 
        %%% fix in out of NN 10 and 100 
     % end
