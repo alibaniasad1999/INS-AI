@@ -1,6 +1,6 @@
 close all; clear; clc;
 %% ========================================================================
-LSTM = importTensorFlowNetwork('../LSTM/LSTM_online_trained_lite');
+% LSTM = importTensorFlowNetwork('../LSTM/LSTM_online_trained_lite');
 Set_Initialization_Error;
 KF_Config;
 % tor_s = 0.01; % GPS Frequency
@@ -124,20 +124,22 @@ for epoch = 2:no_epochs
     tao_GPS = time - GPS_update_time;  % Time update interval
 
         
-    if (epoch > 2000 && epoch < 3500)% add old data from ins data
+    if false && (epoch > 2000 && epoch < 3500)% add old data from ins data
 
         % dlX1 = dlarray(ones([6   1  10]), 'CBT');
         % dlX2 = dlarray(ones([1  1  9]), 'CBT');
         imu_input = 10*(IMU_meas(epoch-9:epoch, 2:end)+[0, 0, 9.8, 0, 0, 0])';
-        ins_inpu = x_train(epoch-9, :);
+        ins_inpu = x_train(epoch-9, :)*...
+            [10000, 10, 1000, 1, 10, 100, 1000, 100, 10];
         dlX1 = dlarray(reshape(imu_input, [6, 1, 10]), 'CBT');
         dlX2 = dlarray(reshape(ins_inpu, [1  1  9]), 'CBT');
         net = predict(LSTM, dlX1, dlX2);
         preidicted_data = net; % normalized in train
-        preidicted_data = extractdata(preidicted_data);
+        preidicted_data = extractdata(preidicted_data) ./...
+            [10000, 10, 1000, 1, 10, 100, 1000, 100, 10];
        est_L_b_Master = preidicted_data(1);
-       % est_lambda_b_Master = preidicted_data(2);
-       % est_h_b_Master = preidicted_data(3);
+       est_lambda_b_Master = preidicted_data(2);
+       est_h_b_Master = preidicted_data(3);
        est_v_eb_n_Master = preidicted_data(4:6);
        est_C_b_n_Master = Euler_to_CTM(preidicted_data(7:9)');
        sum((in_profile(epoch, 2:end) - preidicted_data').^2)
