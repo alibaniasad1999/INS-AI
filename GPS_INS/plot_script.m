@@ -1,7 +1,7 @@
-load('../data_created/01-Jun-2023-21-01-20-INS_GPS_function_KF.mat');
+% load('../data_created/21-Mar-2024-21-02-41-INS_GPS_function_KF.mat.mat');
 time = data(:, 1);
-t1 = [100, 450, 1000, 1450, 1800];
-t2 = [150, 650, 1200, 1600, 1900];
+t1 = [1045];
+t2 = [1800];
 
 colors = [
     0.9290 0.6940 0.1250;  % Dark yellow
@@ -14,7 +14,7 @@ colors = [
     0.4940 0.1840 0.5560;  % Dark purple
     0.4660 0.6740 0.1880   % Dark green
 ];
-line_ploter(time, data(:, 2:end), t1, t2, colors)
+line_ploter_split(time, data(:, 2:end), t1, t2, colors)
 
 hold off
 % line_ploter_3D(time, horzcat(rN(1:end-1), rN2)...
