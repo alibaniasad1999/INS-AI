@@ -3,6 +3,8 @@
 A collection of sensor-fusion and machine-learning modules for an Unmanned Surface Vehicle (USV) platform.  
 This project includes GPS/INS integration, predictive deep-learning models, hyperparameter tuning scripts, and data-generation utilities.
 
+![](graphical_abstract.png)
+
 ---
 
 ## Table of Contents
@@ -137,4 +139,3 @@ Please ensure your code is well-documented, tested, and follows the existing sty
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.
-```
