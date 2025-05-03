@@ -99,7 +99,7 @@ This project includes GPS/INS integration, predictive deep-learning models, hype
 ## Repository Structure
 
 ```
-otter-USV/
+INS-AI/
 ├── GPS_INS/           # GPS + INS sensor-fusion notebooks & scripts
 ├── PNN/               # Probabilistic Neural Network implementations
 ├── LSTM/              # LSTM sequence prediction models
