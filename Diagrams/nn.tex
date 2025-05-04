@@ -1,0 +1,201 @@
+
+
+\resizebox{1\textwidth}{!}{
+	\begin{tikzpicture}[x=4.2cm,y=1.4cm]
+		% \message{^^JNeural network, shifted}
+		\readlist\Nnod{4,5,5} % array of number of nodes per layer
+		\readlist\Nstr{9,32,32} % array of string number of nodes per layer
+		\readlist\ins{\hat{p}_{x(t-n)},
+		\hat{p}_{y(t-n)},
+		\hat{p}_{z(t-n)},
+		\hat{\psi}_{(t-n)}}
+		\readlist\Cstr{\strut x,l^{(\prev)},l^{(\prev)}} % array of coefficient symbol per layer
+		\def\yshift{0.5} % shift last node for dots
+
+		\message{^^J  Layer}
+		\foreachitem \N \in \Nnod{ % loop over layers
+		  \def\lay{\Ncnt} % alias of index of current layer
+		  \pgfmathsetmacro\prev{int(\Ncnt-1)} % number of previous layer
+		  \message{\lay,}
+		  \foreach \i [evaluate={\c=int(\i==\N); \y=\N/2-\i-\c*\yshift;
+					   \index=(\i<\N?int(\i):"\Nstr[\lay]");
+					   \x=\lay; \n=\nstyle;}] in {1,...,\N}{ % loop over nodes
+			% NODES
+			\ifnum\lay=1
+			  \node[node in,green!20!black,draw=mygreen!30!black,fill=mygreen!20, rectangle
+			  ] (N\lay-\i) at (\x,\y) {$\ins[\i]$};
+			\else
+				\node[node hidden] (N\lay-\i) at (\x,\y) {$\Cstr[\lay]_{\index}$};
+			\fi
+
+			% CONNECTIONS
+			\ifnum\lay>1 % connect to previous layer
+			  \foreach \j in {1,...,\Nnod[\prev]}{ % loop over nodes in previous layer
+				\draw[connect,white,line width=1.2] (N\prev-\j) -- (N\lay-\i);
+				\draw[connect] (N\prev-\j) -- (N\lay-\i);
+				%\draw[connect] (N\prev-\j.0) -- (N\lay-\i.180); % connect to left
+			  }
+			\fi % else: nothing to connect first layer
+
+		  }
+		  \path (N\lay-\N) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+		}
+
+		%%%%%%%%%%%%%%%%%%%
+		\def\lowerlstm{-6.5}
+		%%%%%%%%%%%%%%%%%%%
+
+
+		\def\Nnodlstm{4}
+		\def\Nstrlstm{6}
+		\readlist\imu{
+		\tilde{f}_{x(t-n,t)},
+		\tilde{f}_{y(t-n,t)},
+		\tilde{f}_{z(t-n,t)},
+		\tilde{\omega}_{z(t-n,t)}}
+		% add new input layer
+		\foreach \i [evaluate={\c=int(\i==\Nnodlstm); \y=\Nnodlstm/2-\i-\c*\yshift-\lowerlstm;
+					 \index=(\i<\Nnodlstm?int(\i):"\Nstrlstm");
+					 \x=1; \n=\nstyle;}] in {1,...,\Nnodlstm}{
+		  \node[node in,green!20!black,draw=mygreen!30!black,fill=mygreen!20, rectangle
+		  ] (N0lstm-\i) at (\x,\y) {\scriptsize ${\imu[\i]}$};
+		}
+		\path (N0lstm-\Nnodlstm) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+
+		% LSTM layer
+		\def\Nnodlen{5}
+		\def\Nstrlen{32}
+		\foreach \i [evaluate={\c=int(\i==\Nnodlen); \y=\Nnodlen/2-\i-\c*\yshift-\lowerlstm;
+					 \index=(\i<\Nnodlen?int(\i):"\Nstrlen");
+					 \x=2; \n=\nstyle;}] in {1,...,\Nnodlen}{
+		  \node[node LSTM] (N1lstm-\i) at (\x,\y) {$\text{LSTM}^{(1)}_{\index}$};
+		}
+		\path (N1lstm-\Nnodlen) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+
+		% connections
+		\foreach \i in {1,...,\Nnodlstm}{
+		  \foreach \j in {1,...,\Nnodlen}{
+			% connect to left side
+			\draw[connect] (N0lstm-\i) -- (N1lstm-\j.180);
+		  }
+		}
+
+		% LSTM layer 2
+		\def\Nnodlen{5}
+		\def\Nstrlen{32}
+		\foreach \i [evaluate={\c=int(\i==\Nnodlen); \y=\Nnodlen/2-\i-\c*\yshift-\lowerlstm;
+					 \index=(\i<\Nnodlen?int(\i):"\Nstrlen");
+					 \x=3; \n=\nstyle;}] in {1,...,\Nnodlen}{
+		  \node[node LSTM] (N2lstm-\i) at (\x,\y) {$\text{LSTM}^{(2)}_{\index}$};
+		}
+		\path (N2lstm-\Nnodlen) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+
+		% connections
+		\foreach \i in {1,...,\Nnodlen}{
+		  \foreach \j in {1,...,\Nnodlen}{
+			% connect to left side
+			\draw[connect] (N1lstm-\i.0) -- (N2lstm-\j.180);
+		  }
+		}
+
+		% concatenate layer
+		\def\Nnodlenc{8}
+		\def\Nstrlen{32}
+		\foreach \i [evaluate={\c=int(\i==\Nnodlenc); \y=\Nnodlenc/2-\i-\c*\yshift-\lowerlstm/2;
+					 \index=(\i<\Nnodlenc?int(\i):"\Nstrlen");
+					 \x=4; \n=\nstyle;}] in {1,...,\Nnodlenc}{
+		  \node[node, fill=myviolet, draw=black]
+		   (Nc-\i) at (\x,\y) {};
+		}
+		\path (Nc-\Nnodlenc) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+
+
+		% hidden layer
+		\def\Nnodlen{5}
+		\def\Nstrlen{32}
+		\foreach \i [evaluate={\c=int(\i==\Nnodlen); \y=\Nnodlen/2-\i-\c*\yshift-\lowerlstm/2;
+					 \index=(\i<\Nnodlen?int(\i):"\Nstrlen");
+					 \x=5; \n=\nstyle;}] in {1,...,\Nnodlen}{
+		  \node[node hidden] (N4-\i) at (\x,\y) {${l}^{(3)}_{\index}$};
+		}
+		\path (N4-\Nnodlen) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+
+		% connections
+		\foreach \i in {1,...,\Nnodlenc}{
+		  \foreach \j in {1,...,\Nnodlen}{
+			% connect to left side
+			\draw[connect] (Nc-\i) -- (N4-\j);
+		  }
+		}
+
+		% add box for concatenate layer
+		\node[draw=black,fit=(Nc-1)(Nc-\Nnodlenc),inner sep=2pt,fill=myviolet,opacity=0.2] (boxc) {};
+
+		% connections
+		\foreach \i in {1,...,\Nnodlen}{
+			% connect to left north side
+			\draw[connect] (N2lstm-\i.0) -- (boxc);
+		}
+		\foreach \i in {1,...,\Nnod[3]}{
+			% connect to left south side
+			\draw[connect] (N3-\i) -- (boxc);
+		}
+
+		% hidden layer
+		\def\Nnodlen{5}
+		\def\Nstrlen{32}
+		\foreach \i [evaluate={\c=int(\i==\Nnodlen); \y=\Nnodlen/2-\i-\c*\yshift-\lowerlstm/2;
+					 \index=(\i<\Nnodlen?int(\i):"\Nstrlen");
+					 \x=6; \n=\nstyle;}] in {1,...,\Nnodlen}{
+		  \node[node hidden] (N5-\i) at (\x,\y) {${l}^{(4)}_{\index}$};
+		}
+		\path (N5-\Nnodlen) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+
+		% connections
+		\foreach \i in {1,...,\Nnodlen}{
+		  \foreach \j in {1,...,\Nnodlen}{
+			% connect to left side
+			\draw[connect] (N4-\i) -- (N5-\j);
+		  }
+		}
+
+		% output layer
+		\def\Nnodlenc{3}
+		\def\Nstrlen{9}
+		\foreach \i [evaluate={\c=int(\i==\Nnodlenc); \y=\Nnodlenc/2-\i-\c*\yshift-\lowerlstm/2;
+					 \index=(\i<\Nnodlenc?int(\i):"\Nstrlen");
+					 \x=7; \n=\nstyle;}] in {1,...,\Nnodlenc}{
+		  \node[node out] (N6-\i) at (\x,\y) {${y}_{\index}$};
+		}
+		\path (N6-\Nnodlenc) --++ (0,1+\yshift) node[midway,scale=1.5] {$\vdots$};
+
+		% connections
+		\foreach \i in {1,...,\Nnodlen}{
+		  \foreach \j in {1,...,\Nnodlenc}{
+			% connect to left side
+			\draw[connect] (N5-\i) -- (N6-\j);
+		  }
+		}
+
+		% % LABELS
+		\node[above=2em,align=center,mygreen!60!black] at (N1-1.90) {Input Layer\\[-0.2em](SINS)};
+		% second input layer
+		\node[above=2em,align=center,mygreen!60!black] at (N0lstm-1.90) {Time Series\\Input Layer\\[-0.2em](IMU)};
+		% layer between LSTM
+		\path (N1lstm-1) coordinate (coord0);
+		\path (N2lstm-1) coordinate (coord1);
+		\node[above=2em,align=center,myorange!60!black] at ($(coord0)!0.5!(coord1)$) {LSTM\\[-0.2em]Layer};
+		% hidden layer
+		\path (N2-1) coordinate (coord0);
+		\path (N3-1) coordinate (coord1);
+		\node[above=2em,align=center,myblue!60!black] at ($(coord0)!0.5!(coord1)$) {First\\ Hidden\\[-0.2em]Layers};
+		% concatenate layer
+		\node[above=2em,align=center,myviolet] at (Nc-1.90) {Concatenate\\[-0.2em]Flatten\\[-0.2em]Layer};
+		% last hidden layer
+		\path (N5-1) coordinate (coord0);
+		\path (N4-1) coordinate (coord1);
+
+		\node[above=2em,align=center,myblue!60!black] at ($(coord0)!0.5!(coord1)$) {Second\\ Hidden\\[-0.2em]Layers};
+		\node[above=2em,align=center,myred!60!black] at (N6-1.90) {Output\\[-0.2em]Layer};
+	  \end{tikzpicture}
+	  }

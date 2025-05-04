@@ -1,0 +1,73 @@
+\begin{figure}
+	\centering
+	\resizebox{.8\textwidth}{!}{
+        \begin{tikzpicture}
+
+            % Slave
+            % Draw the first inner rectangle (below) with start label
+            \node[sensor] (Gyroscope) at (3, -3) {Gyroscope};
+            
+            % Draw the second inner rectangle (above) with stop label
+            \node[sensor] (Accelerometer) at (3, -1) {Accelerometer};
+        
+            % Draw the IMU label above and aligned with Accelerometer
+            \node[above=1.2cm of Accelerometer.west, align=center, anchor=west] (IMU) {Slave Sensors\\ (IMU)};
+        
+            % Draw the outer rectangle tightly around the two inner rectangles
+            \node[draw, thick, fit=(Accelerometer) (Gyroscope) (IMU), inner sep=4pt, rounded corners] (IMU_outer) {};
+    
+            % SINS
+            \node[sensor, align=center, fill=violet!20, right of=IMU_outer, xshift=3.3cm, yshift=1cm] 
+             (special_force_frame)
+              {Special Force Frame\\ Transformation};
+              \draw[->, thick] (IMU_outer.east |- special_force_frame.west) -- (special_force_frame.west);
+
+            \node[sensor, align=center, fill=violet!20, right of=IMU_outer, xshift=3.3cm, yshift=-1cm] 
+             (attitude_update)
+              {Attitude Update};
+              \draw[->, thick] (IMU_outer.east |- attitude_update.west) -- (attitude_update.west);
+              \draw[->, thick] (attitude_update.north) -- (special_force_frame.south);
+
+              \node[draw, circle,fill=orange!30, right of=special_force_frame, xshift=1.6cm] (sum1)
+                  % add sum symbol
+                  {$\sum$};
+              \draw[->, thick] (special_force_frame.east) -- (sum1.west);
+              \node[draw, circle,fill=orange!30, right of=sum1, xshift=.6cm] (sum2)
+                  % add sum symbol
+                  {$\sum$};
+              \draw[->, thick] (sum1.east) -- (sum2.west);
+              \node[kf, align=center, fill=red!20, right of=sum2, xshift=1.6cm]
+              (nc)
+              {Navigation Computer};
+              \draw[->, thick] (sum2.east) -- (nc.west);
+              % Initial condition node and connection
+              \node[sensor, draw=white, fill=violet!0, below of=nc, yshift=-1cm]
+              (initial_condition)
+              {Initial Condition};
+              \draw[->, thick] (initial_condition.north) -- (nc.south);
+              \node[kf, align=center, fill=red!20, above of=nc, yshift=1.1cm]
+              (coriolis)
+              {Coriolis Correction};
+              \coordinate (coriolis_in) at ($(nc.east) + (1, 1)$);
+              \draw[-, thick] (nc.east) -| (coriolis_in);
+              \draw[->, thick] (coriolis_in) |- (coriolis.east);
+              \coordinate (coriolis_out) at ($(coriolis.west) + (-1, 0)$);
+              \draw[-, thick] (coriolis.west) -| (coriolis_out);
+              \draw[->, thick] (coriolis_out) -- (sum2.north);
+
+              \node[kf, align=center, fill=red!20, above of=nc, yshift=2.8cm]
+              (gravity)
+              {Gravity Model};
+              \coordinate (gravity_in) at ($(nc.east) + (1, 1)$);
+              \draw[-, thick] (nc.east) -| (gravity_in);
+              \draw[->, thick] (gravity_in) |- (gravity.east);
+              \coordinate (gravity_out) at ($(sum1.north) + (0, 2)$);
+              \draw[-, thick] (gravity.west) -| (gravity_out);
+              \draw[->, thick] (gravity_out) -- (sum1.north);
+              \node[pva, right =of nc.east, xshift=0.5cm, align=center] (PVA_TA) {Position, Velocity, Attitude (\(\mathbf{pva}\))};
+              \draw[->, thick] (nc.east) -- (PVA_TA.west);
+
+        \end{tikzpicture}
+  }
+  \caption{Structure of the in-motion transfer alignment for the slave vehicle}\label{fig:INS_structure}
+  \end{figure}

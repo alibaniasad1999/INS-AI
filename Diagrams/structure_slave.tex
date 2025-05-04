@@ -1,0 +1,141 @@
+\begin{figure}
+	\centering
+	\resizebox{1\textwidth}{!}{
+		\begin{tikzpicture}
+
+            % Slave
+            % Draw the first inner rectangle (below) with start label
+            \node[sensor] (Gyroscope) at (3, -3) {Gyroscope};
+
+            % Draw the second inner rectangle (above) with stop label
+            \node[sensor] (Accelerometer) at (3, -1) {Accelerometer};
+
+            % Draw the IMU label above and aligned with Accelerometer
+            \node[above=1.2cm of Accelerometer.west, align=center, anchor=west] (IMU) {Slave Sensors\\ (IMU)};
+
+            % Draw the outer rectangle tightly around the two inner rectangles
+            \node[draw, thick, fit=(Accelerometer) (Gyroscope) (IMU), inner sep=4pt, rounded corners] (IMU_outer) {};
+
+            % SINS
+            \node[sensor, align=center, fill=violet!20, right of=IMU_outer, xshift=3.3cm]
+			(SINS_slave)
+			{Strapdown Inertial\\ Navigation System (SINS)};
+			\draw[->, thick] (IMU_outer) -- (SINS_slave);
+			\node[pva, right =of SINS_slave.east, xshift=-0.25cm, align=center] (PVA_slave) {Position, Velocity, Attitude (\(\mathbf{pva}\))\\ of the Slave Vehicle};
+			\node[draw=none, thick, fit=(PVA_slave) (Gyroscope) (IMU), inner sep=4pt, rounded corners] (slave) {};
+
+            %   \node[above=1.2cm of sensor_diag.west, anchor=west] (master_name) {Master Integration Algorithm};
+
+
+			\node (Master)  at (7, 4){
+				\begin{tikzpicture}[scale=0.5, every node/.style={scale=0.5}]
+					% Draw the first inner rectangle (below) with start label
+					\node[sensor] (Gyroscope) at (3, 3) {Gyroscope};
+
+					% Draw the second inner rectangle (above) with stop label
+					\node[sensor] (Accelerometer) at (3, 5) {Accelerometer};
+
+					% Draw the IMU label above and aligned with Accelerometer
+                \node[above=.6cm of Accelerometer.west, anchor=west] (IMU) {IMU};
+
+                % Draw the outer rectangle tightly around the two inner rectangles
+                \node[draw, thick, fit=(Accelerometer) (Gyroscope) (IMU), inner sep=4pt, rounded corners, scale=1/0.5] (IMU_outer) {};
+
+                \node[sensor, align=center] (GPS) at (3, 8) {Global Positioning\\ System (GPS)};
+
+                % draw outer label for IMU_outer and GPS
+                \node[above=.6cm of GPS.west, anchor=west] (sensor_diag) {Master Sensors};
+
+                % Draw the outer rectangle tightly around the two inner rectangles
+                \node[draw, thick, fit=(IMU_outer) (GPS) (sensor_diag), inner sep=4pt, rounded corners, scale=1/0.5] (sensor_outer) {};
+
+                % SINS
+                \node[sensor, align=center, fill=violet!20, right of=IMU_outer, xshift=3.3cm]
+                 (SINS)
+                  {Strapdown Inertial\\ Navigation System (SINS)};
+
+                % group SINS and Sensors
+                \node[draw=none, thick, fit=(SINS) (sensor_outer), inner sep=4pt] (system) {};
+
+                % observation vector
+                \node[observation] at ($(system)!0.5!(SINS)$) [xshift=3.8cm]
+                 (observation)
+                 {\rotatebox{90}{Observation Vector}};
+
+                % Kalman Filter
+                \node[kf, right of=observation, xshift=1cm]
+                 (KF)
+                  {Kalman Filter};
+
+                % plot circle right of KF to show summation
+                \node[draw, circle,fill=orange!30, right of=KF, xshift=1.6cm] (sum)
+                % add sum symbol
+                {$\sum$};
+                \coordinate[below=.5cm of observation] (bottom);
+                % add PVA
+                \node[pva, right =of sum.east, xshift=-0.5cm, align=center] (PVA) {Position, Velocity, Attitude (\(\mathbf{pva}\))\\ of the Master Vehicle};
+
+
+
+                % connect IMU_outer and SINS
+                \draw[->, thick] (IMU_outer) -- (SINS);
+                % connect Sensors and SINS to observation
+                \draw[->, thick] (SINS.east) -- (observation.west |- SINS);
+                \draw[->, thick] (sensor_outer.east) -- (observation.west |- sensor_outer);
+                % connect observation to KF
+                \draw[->, thick] (observation) -- (KF);
+                % connect KF to sum and write - on line
+                \draw[->, thick] (KF) -- (sum) node[midway, above] {$\delta \hat{\mathbf{x}}_{\mathbf{M}}$}
+                node[midway, below] {$-$};
+                % connect SINS to sum from below add + at the end of line
+                \draw[->, thick] (SINS.south) |- (bottom) -| (sum)
+                node[pos=.95, left] {$+$};
+                % connect sum to PVA
+                \draw[->, thick] (sum) -- (PVA);
+                % connect PVA to SINS
+                \draw[->, thick] (PVA.south) |- ($(bottom) + (0,-.5cm)$) -| (SINS);
+            \end{tikzpicture}
+            };
+            \node[above=2.4cm of Master.west, align=center, anchor=west] (master_name) {Master Integration Algorithm};
+            \node[draw, thick, fit= (Master) (master_name), inner sep=4pt, rounded corners] (master_all) {};
+
+            \node[observation, minimum height=8cm] at ($(slave)!0.5!(master_all)$) [xshift=9.8cm]
+            (observation)
+                 {\rotatebox{90}{Observation Vector}};
+                 \node[kf, right of=observation, xshift=1cm]
+                 (KF)
+                  {Kalman Filter};
+
+                  \node[draw, circle,fill=orange!30, right of=KF, xshift=1.6cm] (sum)
+                  % add sum symbol
+                  {$\sum$};
+                  \coordinate[below=.5cm of observation] (bottom);
+                  % add PVA
+                  \node[pva, right =of sum.east, xshift=-0.5cm, align=center] (PVA_TA) {Position, Velocity, Attitude (\(\mathbf{pva}\))\\ of the Slave Vehicle (TA)};
+
+
+                  % connections
+                  \draw[->, thick] (master_all.east) -- (observation.west |- master_all) node[midway, above] {\(\mathbf{pva}\)};
+
+                  % connect SINS to PVA
+                    \draw[->, thick] (SINS_slave) -- (PVA_slave);
+
+                    % connect PVA to observation
+                    \draw[->, thick] (PVA_slave.east) -- (observation.west |- PVA_slave);
+
+                    % connect observation to KF
+                    \draw[->, thick] (observation) -- (KF);
+                    % connect KF to sum and write - on line
+                    \draw[->, thick] (KF) -- (sum) node[midway, above] {$\delta \hat{\mathbf{x}}_{\mathbf{S}}$}
+                    node[midway, below] {$-$};
+                    % connect SINS to sum from below add + at the end of line
+                    \draw[->, thick] (SINS_slave.south) |- (bottom) -| (sum)
+                    node[pos=.95, left] {$+$};
+					% connect sum to PVA
+                    \draw[->, thick] (sum) -- (PVA_TA);
+
+
+        \end{tikzpicture}
+    }
+	\caption{Structure of the in-motion transfer alignment for the slave vehicle}\label{fig:structure_slave}
+\end{figure}
